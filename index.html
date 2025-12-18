@@ -13,29 +13,33 @@
     // Khởi tạo môi trường giả lập ngay lập tức
     window.process = { env: { API_KEY: "" } };
     
-    // Bắt lỗi toàn cục và hiển thị lên màn hình
+    // Bắt lỗi toàn cục và hiển thị lên màn hình để biết chính xác tại sao bị kẹt
     window.onerror = function(msg, url, line, col, error) {
       const errDisp = document.getElementById('error-display');
       if (errDisp) {
         errDisp.classList.remove('hidden');
         errDisp.innerHTML = `
-          <div class="font-bold mb-1">Phát hiện lỗi khởi động:</div>
-          <div class="opacity-80">${msg}</div>
-          <div class="text-[10px] mt-1 italic">Vị trí: ${url} (Dòng ${line})</div>
+          <div class="font-bold mb-1 text-red-600">Phát hiện lỗi khởi động:</div>
+          <div class="text-xs text-red-500">${msg}</div>
+          <div class="text-[10px] mt-1 text-slate-400">Vị trí: ${url}:${line}</div>
         `;
       }
       return false;
     };
   </script>
 
-  <!-- Babel Standalone - Phiên bản ổn định -->
-  <script src="https://unpkg.com/@babel/standalone@7.23.10/babel.min.js"></script>
+  <!-- Babel Standalone - Cần thiết để biên dịch file .tsx trực tiếp trên trình duyệt -->
+  <script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
     body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
     .animate-spin { animation: spin 1s linear infinite; }
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    
+    /* Logic hiển thị loader: Nếu #root còn trống thì hiện loader, nếu đã có nội dung thì ẩn loader */
+    #root:empty + #loader { display: flex; }
+    #root:not(:empty) + #loader { display: none; }
   </style>
 
   <script type="importmap">
@@ -52,54 +56,55 @@
 </script>
 </head>
 <body class="bg-slate-50 text-slate-900">
-  <div id="root">
-    <div class="flex items-center justify-center min-h-screen bg-white">
-      <div class="text-center p-8">
-        <div class="relative w-20 h-20 mx-auto mb-6">
-          <div class="absolute inset-0 border-4 border-blue-100 rounded-full"></div>
-          <div class="absolute inset-0 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <div class="absolute inset-0 flex items-center justify-center">
-            <i class="fas fa-robot text-blue-600 text-2xl"></i>
-          </div>
+  <!-- Nơi React sẽ render ứng dụng vào -->
+  <div id="root"></div>
+  
+  <!-- Màn hình chờ (Loader) -->
+  <div id="loader" class="flex items-center justify-center min-h-screen bg-white fixed inset-0 z-50">
+    <div class="text-center p-8">
+      <div class="relative w-24 h-24 mx-auto mb-6">
+        <div class="absolute inset-0 border-4 border-blue-100 rounded-full"></div>
+        <div class="absolute inset-0 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <div class="absolute inset-0 flex items-center justify-center">
+          <i class="fas fa-robot text-blue-600 text-3xl"></i>
         </div>
-        <h2 class="text-xl font-bold text-slate-800 mb-2">Đang kết nối AI...</h2>
-        <p class="text-slate-500 text-sm max-w-xs mx-auto">Vui lòng không tắt trang, quá trình tải thư viện lần đầu có thể mất 10-20 giây.</p>
-        <div id="error-display" class="mt-6 p-4 bg-red-50 text-red-700 text-[11px] text-left rounded-xl hidden border border-red-100 shadow-sm overflow-auto max-w-sm mx-auto"></div>
       </div>
+      <h2 class="text-xl font-bold text-slate-800 mb-2">Đang khởi chạy hệ thống...</h2>
+      <p class="text-slate-500 text-sm max-w-xs mx-auto mb-4">
+        Quá trình nạp thư viện lần đầu có thể mất vài giây. Vui lòng chờ trong giây lát.
+      </p>
+      
+      <!-- Nơi hiển thị lỗi nếu có -->
+      <div id="error-display" class="mt-4 p-4 bg-red-50 border border-red-100 rounded-xl hidden text-left max-w-sm mx-auto overflow-auto shadow-inner"></div>
+      
+      <p class="text-[10px] text-slate-400 mt-8 uppercase font-bold tracking-widest">Hệ thống giáo dục AI thông minh</p>
     </div>
   </div>
 
-  <!-- Đoạn mã khởi chạy React -->
+  <!-- Script khởi chạy chính -->
   <script type="text/babel" data-type="module">
     import React from 'react';
     import { createRoot } from 'react-dom/client';
-    
-    // Sử dụng đường dẫn tương đối chính xác cho GitHub Pages
     import App from './App.tsx';
 
-    const startApp = () => {
-      try {
-        const container = document.getElementById('root');
-        if (container) {
-          const root = createRoot(container);
-          root.render(<App />);
-          console.log("Hệ thống: React đã sẵn sàng!");
-        }
-      } catch (err) {
-        console.error("Lỗi Render:", err);
-        const errDisp = document.getElementById('error-display');
-        if (errDisp) {
-          errDisp.classList.remove('hidden');
-          errDisp.innerText = "Lỗi Render: " + err.message;
-        }
+    try {
+      const container = document.getElementById('root');
+      if (container) {
+        const root = createRoot(container);
+        root.render(
+          <React.StrictMode>
+            <App />
+          </React.StrictMode>
+        );
+        console.log("React: Ứng dụng đã khởi động thành công.");
       }
-    };
-
-    // Đợi Babel xử lý xong rồi mới chạy
-    if (window.Babel) {
-      startApp();
-    } else {
-      window.addEventListener('load', startApp);
+    } catch (err) {
+      console.error("Mount error:", err);
+      const errDisp = document.getElementById('error-display');
+      if (errDisp) {
+        errDisp.classList.remove('hidden');
+        errDisp.innerHTML = `<div class="text-red-600 font-bold">Lỗi Render:</div><div class="text-xs">${err.message}</div>`;
+      }
     }
   </script>
 </body>
