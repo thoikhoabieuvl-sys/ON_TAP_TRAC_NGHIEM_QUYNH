@@ -14,14 +14,19 @@
       background-color: #f8fafc;
       color: #1e293b;
       margin: 0;
+      overflow-x: hidden;
     }
     .quiz-card {
       background: white;
       border-radius: 2rem;
       box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.05);
       border: 1px solid #f1f5f9;
+      transition: all 0.3s ease;
     }
-    /* Hide scrollbar but keep functionality */
+    .quiz-card:hover {
+      box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.08);
+      transform: translateY(-2px);
+    }
     ::-webkit-scrollbar {
       width: 6px;
     }

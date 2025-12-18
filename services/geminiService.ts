@@ -1,7 +1,132 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 
-// Manual base64 encoding as required by guidelines for Live API
+/**
+ * Giải thích câu hỏi trắc nghiệm sử dụng Gemini Flash.
+ * API Key được lấy từ process.env.API_KEY theo cấu hình hệ thống.
+ */
+export const explainQuestion = async (question: string, options: string[], correctAnswer: string) => {
+  // Khởi tạo thực thể AI ngay trong hàm để đảm bảo luôn dùng API Key mới nhất
+  const apiKey = process.env.API_KEY;
+  
+  if (!apiKey) {
+    return "Lỗi: Hệ thống chưa cấu hình API Key. Vui lòng kiểm tra cài đặt.";
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
+  
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `Bạn là một giáo viên tận tâm. Hãy giải thích tại sao đáp án "${correctAnswer}" là đúng cho câu hỏi sau:
+      Câu hỏi: ${question}
+      Các lựa chọn: ${options.join(', ')}
+      
+      Yêu cầu:
+      1. Giải thích ngắn gọn, dễ hiểu cho học sinh.
+      2. Sử dụng tiếng Việt.
+      3. Trình bày thân thiện.`,
+    });
+    
+    return response.text || "AI không thể đưa ra lời giải thích lúc này.";
+  } catch (error) {
+    console.error("Gemini Error:", error);
+    return "Đã xảy ra lỗi khi kết nối với trợ lý AI. Vui lòng thử lại sau.";
+  }
+};
+
+/**
+ * Tạo câu trả lời có suy luận sâu sắc sử dụng Gemini 3 Pro Reasoning.
+ */
+export const generateThoughtfulResponse = async (prompt: string, history: any[]) => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: [...history, { role: 'user', parts: [{ text: prompt }] }],
+      config: {
+        thinkingConfig: { thinkingBudget: 32768 }
+      }
+    });
+    return response.text || "Không có phản hồi từ AI.";
+  } catch (error) {
+    console.error("Thoughtful Response Error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Tạo hình ảnh từ mô tả văn bản sử dụng gemini-2.5-flash-image.
+ */
+export const generateImage = async (prompt: string) => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-image',
+      contents: { parts: [{ text: prompt }] },
+      config: {
+        imageConfig: {
+          aspectRatio: "1:1",
+        },
+      },
+    });
+
+    for (const part of response.candidates[0].content.parts) {
+      if (part.inlineData) {
+        return `data:image/png;base64,${part.inlineData.data}`;
+      }
+    }
+    throw new Error("Không tìm thấy dữ liệu hình ảnh trong phản hồi.");
+  } catch (error) {
+    console.error("Image Generation Error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Phân tích văn bản và trích xuất dữ liệu JSON để vẽ biểu đồ.
+ */
+export const analyzeData = async (input: string) => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `Phân tích dữ liệu sau và trích xuất các thông tin quan trọng để vẽ biểu đồ. 
+      Dữ liệu: ${input}`,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              name: {
+                type: Type.STRING,
+                description: 'Tên nhãn hoặc mốc thời gian',
+              },
+              value: {
+                type: Type.NUMBER,
+                description: 'Giá trị số chính',
+              },
+              secondaryValue: {
+                type: Type.NUMBER,
+                description: 'Giá trị số phụ (nếu có)',
+              },
+            },
+            required: ["name", "value"],
+          },
+        },
+      },
+    });
+
+    return JSON.parse(response.text || "[]");
+  } catch (error) {
+    console.error("Data Analysis Error:", error);
+    throw error;
+  }
+};
+
+// Các hàm bổ trợ cho Live API (Audio)
 export function encode(bytes: Uint8Array) {
   let binary = '';
   const len = bytes.byteLength;
@@ -11,7 +136,6 @@ export function encode(bytes: Uint8Array) {
   return btoa(binary);
 }
 
-// Manual base64 decoding as required by guidelines for Live API
 export function decode(base64: string) {
   const binaryString = atob(base64);
   const len = binaryString.length;
@@ -22,10 +146,6 @@ export function decode(base64: string) {
   return bytes;
 }
 
-/**
- * Decodes raw PCM audio data into an AudioBuffer.
- * This implements the manual decoding logic required for streaming raw audio chunks.
- */
 export async function decodeAudioData(
   data: Uint8Array,
   ctx: AudioContext,
@@ -44,107 +164,3 @@ export async function decodeAudioData(
   }
   return buffer;
 }
-
-/**
- * Explains a quiz question using Gemini Flash.
- */
-export const explainQuestion = async (question: string, options: string[], correctAnswer: string) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: `Giải thích ngắn gọn, dễ hiểu tại sao đáp án "${correctAnswer}" là đúng.
-      Câu hỏi: ${question}
-      Lựa chọn: ${options.join(', ')}
-      Giải thích bằng tiếng Việt cho học sinh.`,
-    });
-    return response.text || "AI không trả về kết quả.";
-  } catch (error) {
-    console.error("Gemini Error:", error);
-    return "Đã xảy ra lỗi khi kết nối với AI.";
-  }
-};
-
-/**
- * Generates a thoughtful response using Gemini Pro with reasoning enabled.
- */
-export const generateThoughtfulResponse = async (prompt: string, history: any[]) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
-  try {
-    const chat = ai.chats.create({
-      model: 'gemini-3-pro-preview',
-      config: {
-        thinkingConfig: { thinkingBudget: 32768 }
-      },
-      history: history
-    });
-    const response = await chat.sendMessage({ message: prompt });
-    return response.text || "";
-  } catch (error) {
-    console.error("Gemini Thinking Error:", error);
-    throw error;
-  }
-};
-
-/**
- * Generates an image using Gemini Flash Image.
- */
-export const generateImage = async (prompt: string) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
-      contents: [{ text: prompt }],
-      config: {
-        imageConfig: {
-          aspectRatio: "1:1",
-        }
-      }
-    });
-    
-    // Iterate parts to find the image part
-    for (const part of response.candidates[0].content.parts) {
-      if (part.inlineData) {
-        return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-      }
-    }
-    throw new Error("No image data found in response.");
-  } catch (error) {
-    console.error("Gemini Image Generation Error:", error);
-    throw error;
-  }
-};
-
-/**
- * Analyzes text to extract numerical data for charting using structured JSON output.
- */
-export const analyzeData = async (input: string) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: `Extract numerical data for visualization. Input: ${input}`,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              name: { type: Type.STRING, description: "Label for the data point" },
-              value: { type: Type.NUMBER, description: "Primary numerical value" },
-              secondaryValue: { type: Type.NUMBER, description: "Optional secondary numerical value" }
-            },
-            required: ["name", "value"],
-            propertyOrdering: ["name", "value", "secondaryValue"]
-          }
-        }
-      }
-    });
-    const result = response.text || "[]";
-    return JSON.parse(result);
-  } catch (error) {
-    console.error("Gemini Data Analysis Error:", error);
-    throw error;
-  }
-};
