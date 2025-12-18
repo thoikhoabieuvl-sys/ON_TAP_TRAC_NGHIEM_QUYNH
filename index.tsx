@@ -1,3 +1,6 @@
 
-// File này đã được gộp vào index.html để tối ưu cho GitHub Pages.
-// Vui lòng không xóa file này để tránh lỗi link script, nhưng code thật nằm ở index.html.
+/**
+ * File này đã được chuyển vào index.html để tối ưu hóa việc chạy 
+ * trực tiếp trên trình duyệt (Babel Standalone) cho GitHub Pages.
+ */
+console.log("Hệ thống: Đang sử dụng index.html làm entry point.");

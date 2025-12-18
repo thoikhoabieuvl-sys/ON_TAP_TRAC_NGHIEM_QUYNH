@@ -1,7 +1,11 @@
 
 export enum AppTab {
   DASHBOARD = 'trang_chu',
-  QUIZ_LAB = 'on_tap'
+  QUIZ_LAB = 'on_tap',
+  WRITER = 'viet_lach',
+  IMAGE_GEN = 'tao_anh',
+  DATA_VIZ = 'du_lieu',
+  VOICE = 'giao_tiep'
 }
 
 export interface Question {

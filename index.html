@@ -4,42 +4,41 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hệ Thống Ôn Tập Trắc Nghiệm AI</title>
+  <title>Hệ Thống Ôn Tập & Trợ Lý AI</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <script>
-    // Khởi tạo môi trường giả lập ngay lập tức
+    // Khởi tạo môi trường giả lập cho process.env
     window.process = { env: { API_KEY: "" } };
     
-    // Bắt lỗi toàn cục và hiển thị lên màn hình để biết chính xác tại sao bị kẹt
+    // Bẫy lỗi để hiển thị thông tin nếu có sự cố nạp thư viện
     window.onerror = function(msg, url, line, col, error) {
       const errDisp = document.getElementById('error-display');
       if (errDisp) {
         errDisp.classList.remove('hidden');
         errDisp.innerHTML = `
-          <div class="font-bold mb-1 text-red-600">Phát hiện lỗi khởi động:</div>
-          <div class="text-xs text-red-500">${msg}</div>
-          <div class="text-[10px] mt-1 text-slate-400">Vị trí: ${url}:${line}</div>
+          <div class="font-bold text-red-600 mb-1">Lỗi hệ thống:</div>
+          <div class="text-[10px] text-red-500 opacity-80">${msg}</div>
         `;
       }
       return false;
     };
   </script>
 
-  <!-- Babel Standalone - Cần thiết để biên dịch file .tsx trực tiếp trên trình duyệt -->
+  <!-- Babel Standalone ổn định -->
   <script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-    body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
     .animate-spin { animation: spin 1s linear infinite; }
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     
-    /* Logic hiển thị loader: Nếu #root còn trống thì hiện loader, nếu đã có nội dung thì ẩn loader */
-    #root:empty + #loader { display: flex; }
+    /* Tự động ẩn loader khi React đã render xong */
     #root:not(:empty) + #loader { display: none; }
+    .quiz-card { background: white; border-radius: 1.5rem; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
   </style>
 
   <script type="importmap">
@@ -55,57 +54,31 @@
 }
 </script>
 </head>
-<body class="bg-slate-50 text-slate-900">
-  <!-- Nơi React sẽ render ứng dụng vào -->
+<body class="bg-[#f8fafc]">
   <div id="root"></div>
   
-  <!-- Màn hình chờ (Loader) -->
-  <div id="loader" class="flex items-center justify-center min-h-screen bg-white fixed inset-0 z-50">
-    <div class="text-center p-8">
-      <div class="relative w-24 h-24 mx-auto mb-6">
-        <div class="absolute inset-0 border-4 border-blue-100 rounded-full"></div>
-        <div class="absolute inset-0 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+  <div id="loader" class="fixed inset-0 z-50 flex items-center justify-center bg-white">
+    <div class="text-center">
+      <div class="relative w-20 h-20 mx-auto mb-6">
+        <div class="absolute inset-0 border-4 border-blue-50 border-t-blue-600 rounded-full animate-spin"></div>
         <div class="absolute inset-0 flex items-center justify-center">
-          <i class="fas fa-robot text-blue-600 text-3xl"></i>
+          <i class="fas fa-microchip text-blue-600 text-2xl"></i>
         </div>
       </div>
-      <h2 class="text-xl font-bold text-slate-800 mb-2">Đang khởi chạy hệ thống...</h2>
-      <p class="text-slate-500 text-sm max-w-xs mx-auto mb-4">
-        Quá trình nạp thư viện lần đầu có thể mất vài giây. Vui lòng chờ trong giây lát.
-      </p>
-      
-      <!-- Nơi hiển thị lỗi nếu có -->
-      <div id="error-display" class="mt-4 p-4 bg-red-50 border border-red-100 rounded-xl hidden text-left max-w-sm mx-auto overflow-auto shadow-inner"></div>
-      
-      <p class="text-[10px] text-slate-400 mt-8 uppercase font-bold tracking-widest">Hệ thống giáo dục AI thông minh</p>
+      <h2 class="text-lg font-bold text-slate-800">Đang khởi động AI...</h2>
+      <p class="text-slate-400 text-xs mt-2">Vui lòng chờ trong giây lát</p>
+      <div id="error-display" class="mt-6 p-3 bg-red-50 border border-red-100 rounded-lg hidden text-left max-w-xs mx-auto"></div>
     </div>
   </div>
 
-  <!-- Script khởi chạy chính -->
   <script type="text/babel" data-type="module">
     import React from 'react';
     import { createRoot } from 'react-dom/client';
     import App from './App.tsx';
 
-    try {
-      const container = document.getElementById('root');
-      if (container) {
-        const root = createRoot(container);
-        root.render(
-          <React.StrictMode>
-            <App />
-          </React.StrictMode>
-        );
-        console.log("React: Ứng dụng đã khởi động thành công.");
-      }
-    } catch (err) {
-      console.error("Mount error:", err);
-      const errDisp = document.getElementById('error-display');
-      if (errDisp) {
-        errDisp.classList.remove('hidden');
-        errDisp.innerHTML = `<div class="text-red-600 font-bold">Lỗi Render:</div><div class="text-xs">${err.message}</div>`;
-      }
-    }
+    const container = document.getElementById('root');
+    const root = createRoot(container);
+    root.render(<App />);
   </script>
 </body>
 </html>
