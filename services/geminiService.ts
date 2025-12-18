@@ -1,85 +1,17 @@
 
-import { GoogleGenAI, Type, Modality } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 
-const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-
-export const explainQuestion = async (question: string, options: string[], correctAnswer: string) => {
-  const ai = getAI();
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: `Giải thích ngắn gọn và dễ hiểu tại sao trong câu hỏi trắc nghiệm sau đây, đáp án "${correctAnswer}" là chính xác.
-    Câu hỏi: ${question}
-    Các lựa chọn: ${options.join(', ')}
-    Hãy giải thích theo phong cách giáo viên đang giảng bài cho học sinh trung học.`,
-    config: {
-      temperature: 0.5,
-    }
-  });
-  return response.text || 'Không thể lấy lời giải thích lúc này.';
-};
-
-export const generateThoughtfulResponse = async (prompt: string, history: { role: string, parts: { text: string }[] }[]) => {
-  const ai = getAI();
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-pro-preview',
-    contents: [
-      ...history.map(h => ({ role: h.role === 'model' ? 'model' : 'user', parts: [{ text: h.parts[0].text }] })),
-      { role: 'user', parts: [{ text: prompt }] }
-    ],
-    config: {
-      thinkingConfig: { thinkingBudget: 16000 },
-      temperature: 0.7,
-    }
-  });
-  return response.text || '';
-};
-
-export const generateImage = async (prompt: string) => {
-  const ai = getAI();
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash-image',
-    contents: {
-      parts: [{ text: prompt }]
-    },
-    config: {
-      imageConfig: {
-        aspectRatio: "1:1"
-      }
-    }
-  });
-
-  for (const part of response.candidates?.[0]?.content?.parts || []) {
-    if (part.inlineData) {
-      return `data:image/png;base64,${part.inlineData.data}`;
-    }
+// Manual base64 encoding as required by guidelines for Live API
+export function encode(bytes: Uint8Array) {
+  let binary = '';
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
   }
-  throw new Error('No image generated');
-};
+  return btoa(binary);
+}
 
-export const analyzeData = async (dataDescription: string) => {
-  const ai = getAI();
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: `Analyze this data or request and return a JSON array of objects suitable for a Recharts bar or line chart. Each object should have a 'name' field and at least one numeric value field. Request: ${dataDescription}`,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            name: { type: Type.STRING },
-            value: { type: Type.NUMBER },
-            secondaryValue: { type: Type.NUMBER }
-          },
-          required: ["name", "value"]
-        }
-      }
-    }
-  });
-  return JSON.parse(response.text || '[]');
-};
-
+// Manual base64 decoding as required by guidelines for Live API
 export function decode(base64: string) {
   const binaryString = atob(base64);
   const len = binaryString.length;
@@ -90,15 +22,10 @@ export function decode(base64: string) {
   return bytes;
 }
 
-export function encode(bytes: Uint8Array) {
-  let binary = '';
-  const len = bytes.byteLength;
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-}
-
+/**
+ * Decodes raw PCM audio data into an AudioBuffer.
+ * This implements the manual decoding logic required for streaming raw audio chunks.
+ */
 export async function decodeAudioData(
   data: Uint8Array,
   ctx: AudioContext,
@@ -117,3 +44,107 @@ export async function decodeAudioData(
   }
   return buffer;
 }
+
+/**
+ * Explains a quiz question using Gemini Flash.
+ */
+export const explainQuestion = async (question: string, options: string[], correctAnswer: string) => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `Giải thích ngắn gọn, dễ hiểu tại sao đáp án "${correctAnswer}" là đúng.
+      Câu hỏi: ${question}
+      Lựa chọn: ${options.join(', ')}
+      Giải thích bằng tiếng Việt cho học sinh.`,
+    });
+    return response.text || "AI không trả về kết quả.";
+  } catch (error) {
+    console.error("Gemini Error:", error);
+    return "Đã xảy ra lỗi khi kết nối với AI.";
+  }
+};
+
+/**
+ * Generates a thoughtful response using Gemini Pro with reasoning enabled.
+ */
+export const generateThoughtfulResponse = async (prompt: string, history: any[]) => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+  try {
+    const chat = ai.chats.create({
+      model: 'gemini-3-pro-preview',
+      config: {
+        thinkingConfig: { thinkingBudget: 32768 }
+      },
+      history: history
+    });
+    const response = await chat.sendMessage({ message: prompt });
+    return response.text || "";
+  } catch (error) {
+    console.error("Gemini Thinking Error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Generates an image using Gemini Flash Image.
+ */
+export const generateImage = async (prompt: string) => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-image',
+      contents: [{ text: prompt }],
+      config: {
+        imageConfig: {
+          aspectRatio: "1:1",
+        }
+      }
+    });
+    
+    // Iterate parts to find the image part
+    for (const part of response.candidates[0].content.parts) {
+      if (part.inlineData) {
+        return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+      }
+    }
+    throw new Error("No image data found in response.");
+  } catch (error) {
+    console.error("Gemini Image Generation Error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Analyzes text to extract numerical data for charting using structured JSON output.
+ */
+export const analyzeData = async (input: string) => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `Extract numerical data for visualization. Input: ${input}`,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              name: { type: Type.STRING, description: "Label for the data point" },
+              value: { type: Type.NUMBER, description: "Primary numerical value" },
+              secondaryValue: { type: Type.NUMBER, description: "Optional secondary numerical value" }
+            },
+            required: ["name", "value"],
+            propertyOrdering: ["name", "value", "secondaryValue"]
+          }
+        }
+      }
+    });
+    const result = response.text || "[]";
+    return JSON.parse(result);
+  } catch (error) {
+    console.error("Gemini Data Analysis Error:", error);
+    throw error;
+  }
+};

@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
-import { AppTab } from './types';
-import Sidebar from './components/Sidebar';
-import Dashboard from './components/Dashboard';
-import QuizLab from './components/QuizLab';
+import { AppTab } from './types.ts';
+import Sidebar from './components/Sidebar.tsx';
+import Dashboard from './components/Dashboard.tsx';
+import QuizLab from './components/QuizLab.tsx';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<AppTab>(AppTab.DASHBOARD);
@@ -20,9 +20,9 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen">
+    <div className="flex flex-col md:flex-row min-h-screen bg-[#f8fafc]">
       <Sidebar activeTab={activeTab} onSelectTab={setActiveTab} />
-      <main className="flex-1 p-4 md:p-8 overflow-y-auto bg-[#f8fafc]">
+      <main className="flex-1 p-4 md:p-8 overflow-y-auto">
         <div className="max-w-4xl mx-auto">
           {renderContent()}
         </div>
