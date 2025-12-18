@@ -10,19 +10,26 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <script>
-    // Cấu hình giả lập môi trường Node.js cho trình duyệt
+    // Khởi tạo môi trường giả lập ngay lập tức
     window.process = { env: { API_KEY: "" } };
-    window.onerror = function(msg, url, line) {
+    
+    // Bắt lỗi toàn cục và hiển thị lên màn hình
+    window.onerror = function(msg, url, line, col, error) {
       const errDisp = document.getElementById('error-display');
       if (errDisp) {
         errDisp.classList.remove('hidden');
-        errDisp.innerHTML = `Lỗi hệ thống: ${msg} (Dòng ${line})`;
+        errDisp.innerHTML = `
+          <div class="font-bold mb-1">Phát hiện lỗi khởi động:</div>
+          <div class="opacity-80">${msg}</div>
+          <div class="text-[10px] mt-1 italic">Vị trí: ${url} (Dòng ${line})</div>
+        `;
       }
+      return false;
     };
   </script>
 
-  <!-- Babel để dịch code React/TSX ngay trên trình duyệt -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Babel Standalone - Phiên bản ổn định -->
+  <script src="https://unpkg.com/@babel/standalone@7.23.10/babel.min.js"></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
@@ -56,33 +63,43 @@
           </div>
         </div>
         <h2 class="text-xl font-bold text-slate-800 mb-2">Đang kết nối AI...</h2>
-        <p class="text-slate-500 text-sm max-w-xs mx-auto">Nếu quá 30 giây không tải xong, vui lòng nhấn F5.</p>
-        <div id="error-display" class="mt-6 p-4 bg-red-50 text-red-600 text-xs rounded-lg hidden border border-red-100"></div>
+        <p class="text-slate-500 text-sm max-w-xs mx-auto">Vui lòng không tắt trang, quá trình tải thư viện lần đầu có thể mất 10-20 giây.</p>
+        <div id="error-display" class="mt-6 p-4 bg-red-50 text-red-700 text-[11px] text-left rounded-xl hidden border border-red-100 shadow-sm overflow-auto max-w-sm mx-auto"></div>
       </div>
     </div>
   </div>
 
-  <!-- Đoạn script này đóng vai trò thay thế cho index.tsx để đảm bảo khởi chạy an toàn -->
+  <!-- Đoạn mã khởi chạy React -->
   <script type="text/babel" data-type="module">
     import React from 'react';
     import { createRoot } from 'react-dom/client';
+    
+    // Sử dụng đường dẫn tương đối chính xác cho GitHub Pages
     import App from './App.tsx';
 
-    try {
-      const container = document.getElementById('root');
-      if (container) {
-        const root = createRoot(container);
-        root.render(
-          <React.StrictMode>
-            <App />
-          </React.StrictMode>
-        );
-        console.log("React đã khởi chạy thành công!");
+    const startApp = () => {
+      try {
+        const container = document.getElementById('root');
+        if (container) {
+          const root = createRoot(container);
+          root.render(<App />);
+          console.log("Hệ thống: React đã sẵn sàng!");
+        }
+      } catch (err) {
+        console.error("Lỗi Render:", err);
+        const errDisp = document.getElementById('error-display');
+        if (errDisp) {
+          errDisp.classList.remove('hidden');
+          errDisp.innerText = "Lỗi Render: " + err.message;
+        }
       }
-    } catch (err) {
-      console.error("Lỗi Render:", err);
-      document.getElementById('error-display').classList.remove('hidden');
-      document.getElementById('error-display').innerText = err.message;
+    };
+
+    // Đợi Babel xử lý xong rồi mới chạy
+    if (window.Babel) {
+      startApp();
+    } else {
+      window.addEventListener('load', startApp);
     }
   </script>
 </body>
