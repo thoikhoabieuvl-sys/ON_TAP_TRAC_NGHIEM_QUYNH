@@ -10,18 +10,20 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case AppTab.DASHBOARD: return <Dashboard onNavigate={setActiveTab} />;
-      case AppTab.QUIZ_LAB: return <QuizLab />;
-      default: return <Dashboard onNavigate={setActiveTab} />;
+      case AppTab.DASHBOARD: 
+        return <Dashboard onNavigate={setActiveTab} />;
+      case AppTab.QUIZ_LAB: 
+        return <QuizLab />;
+      default: 
+        return <Dashboard onNavigate={setActiveTab} />;
     }
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-[#f8fafc] overflow-hidden">
+    <div className="flex flex-col md:flex-row min-h-screen">
       <Sidebar activeTab={activeTab} onSelectTab={setActiveTab} />
-      
-      <main className="flex-1 overflow-y-auto p-4 md:p-8">
-        <div className="max-w-5xl mx-auto h-full">
+      <main className="flex-1 p-4 md:p-8 overflow-y-auto bg-[#f8fafc]">
+        <div className="max-w-4xl mx-auto">
           {renderContent()}
         </div>
       </main>

@@ -7,96 +7,93 @@ const SAMPLE_QUIZZES: QuizCategory[] = [
   {
     id: 'history',
     title: 'Lịch Sử Việt Nam',
-    description: 'Ôn tập về các triều đại và cuộc kháng chiến bảo vệ tổ quốc.',
-    icon: 'fa-book-history',
+    description: 'Ôn tập kiến thức lịch sử phổ thông.',
+    icon: 'fa-landmark',
     questions: [
-      { id: 1, question: 'Ngô Quyền đánh tan quân Nam Hán trên sông Bạch Đằng vào năm nào?', options: ['Năm 905', 'Năm 931', 'Năm 938', 'Năm 981'], correctAnswer: 2 },
-      { id: 2, question: 'Vị vua nào của triều đại nhà Trần đã hai lần sang làm Thái thượng hoàng?', options: ['Trần Thánh Tông', 'Trần Nhân Tông', 'Trần Anh Tông', 'Trần Minh Tông'], correctAnswer: 1 },
-      { id: 3, question: 'Chiến thắng Điện Biên Phủ "lừng lẫy năm châu, chấn động địa cầu" diễn ra vào năm nào?', options: ['1945', '1954', '1960', '1975'], correctAnswer: 1 }
+      { id: 1, question: 'Vị vua nào đã đặt tên nước ta là Vạn Xuân?', options: ['Lý Nam Đế', 'Ngô Quyền', 'Đinh Tiên Hoàng', 'Lê Hoàn'], correctAnswer: 0 },
+      { id: 2, question: 'Cuộc khởi nghĩa Hai Bà Trưng diễn ra vào năm nào?', options: ['Năm 40', 'Năm 938', 'Năm 1789', 'Năm 1945'], correctAnswer: 0 },
+      { id: 3, question: 'Bác Hồ đọc bản Tuyên ngôn Độc lập tại đâu?', options: ['Quảng trường Ba Đình', 'Dinh Độc Lập', 'Bến Nhà Rồng', 'Pác Bó'], correctAnswer: 0 }
     ]
   },
   {
-    id: 'science',
+    id: 'nature',
     title: 'Khoa Học Tự Nhiên',
-    description: 'Các kiến thức cơ bản về sinh học, vật lý và hóa học.',
-    icon: 'fa-flask',
+    description: 'Kiến thức về thế giới xung quanh chúng ta.',
+    icon: 'fa-leaf',
     questions: [
-      { id: 1, question: 'Chất nào chiếm khoảng 78% bầu khí quyển của Trái Đất?', options: ['Oxy', 'Cacbonic', 'Nitơ', 'Hydro'], correctAnswer: 2 },
-      { id: 2, question: 'Cơ quan nào trong cơ thể con người chịu trách nhiệm lọc máu?', options: ['Tim', 'Thận', 'Gan', 'Phổi'], correctAnswer: 1 },
-      { id: 3, question: 'Nhiệt độ sôi của nước tinh khiết ở áp suất tiêu chuẩn là bao nhiêu?', options: ['90 độ C', '100 độ C', '110 độ C', '120 độ C'], correctAnswer: 1 }
+      { id: 1, question: 'Nhiệt độ sôi của nước ở điều kiện thường là bao nhiêu?', options: ['90°C', '100°C', '110°C', '120°C'], correctAnswer: 1 },
+      { id: 2, question: 'Hành tinh nào gần Mặt trời nhất?', options: ['Sao Kim', 'Sao Hỏa', 'Sao Thủy', 'Trái Đất'], correctAnswer: 2 },
+      { id: 3, question: 'Con người hít khí gì để duy trì sự sống?', options: ['Khí Nitơ', 'Khí Oxy', 'Khí Hydro', 'Khí Cacbonic'], correctAnswer: 1 }
     ]
   }
 ];
 
 const QuizLab: React.FC = () => {
-  const [selectedCategory, setSelectedCategory] = useState<QuizCategory | null>(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
-  const [isAnswered, setIsAnswered] = useState(false);
+  const [selectedCat, setSelectedCat] = useState<QuizCategory | null>(null);
+  const [qIdx, setQIdx] = useState(0);
+  const [userChoice, setUserChoice] = useState<number | null>(null);
+  const [isLocked, setIsLocked] = useState(false);
   const [score, setScore] = useState(0);
-  const [showEnd, setShowEnd] = useState(false);
-  const [explanation, setExplanation] = useState<string | null>(null);
-  const [loadingAI, setLoadingAI] = useState(false);
+  const [isFinished, setIsFinished] = useState(false);
+  const [aiText, setAiText] = useState<string | null>(null);
+  const [isThinking, setIsThinking] = useState(false);
 
-  const currentQ = selectedCategory?.questions[currentIndex];
+  const currentQ = selectedCat?.questions[qIdx];
 
-  const handleSelect = (idx: number) => {
-    if (isAnswered) return;
-    setSelectedIdx(idx);
+  const handleFinish = () => {
+    setIsFinished(true);
+  };
+
+  const handleNext = () => {
+    setAiText(null);
+    if (qIdx < (selectedCat?.questions.length || 0) - 1) {
+      setQIdx(qIdx + 1);
+      setUserChoice(null);
+      setIsLocked(false);
+    } else {
+      handleFinish();
+    }
   };
 
   const checkAnswer = () => {
-    if (selectedIdx === null) return;
-    setIsAnswered(true);
-    if (selectedIdx === currentQ?.correctAnswer) {
-      setScore(s => s + 1);
+    if (userChoice === null) return;
+    setIsLocked(true);
+    if (userChoice === currentQ?.correctAnswer) {
+      setScore(score + 1);
     }
   };
 
-  const nextQuestion = () => {
-    setExplanation(null);
-    if (currentIndex < (selectedCategory?.questions.length || 0) - 1) {
-      setCurrentIndex(prev => prev + 1);
-      setSelectedIdx(null);
-      setIsAnswered(false);
-    } else {
-      setShowEnd(true);
-    }
-  };
-
-  const getAIExplanation = async () => {
+  const getHelp = async () => {
     if (!currentQ) return;
-    setLoadingAI(true);
+    setIsThinking(true);
     try {
       const res = await explainQuestion(
         currentQ.question,
         currentQ.options,
         currentQ.options[currentQ.correctAnswer]
       );
-      setExplanation(res);
+      setAiText(res);
     } catch (e) {
-      setExplanation("Xin lỗi, tôi không thể lấy lời giải lúc này.");
+      setAiText("Có lỗi khi kết nối với AI. Vui lòng thử lại.");
     } finally {
-      setLoadingAI(false);
+      setIsThinking(false);
     }
   };
 
-  if (!selectedCategory) {
+  if (!selectedCat) {
     return (
-      <div className="max-w-4xl mx-auto py-10">
-        <h2 className="text-3xl font-bold text-slate-800 mb-8">Danh mục ôn tập</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {SAMPLE_QUIZZES.map(q => (
+      <div className="py-6 animate-in fade-in duration-500">
+        <h2 className="text-2xl font-bold mb-6 text-slate-800">Chọn môn học</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {SAMPLE_QUIZZES.map(cat => (
             <button
-              key={q.id}
-              onClick={() => setSelectedCategory(q)}
-              className="bg-white p-8 rounded-3xl border border-slate-200 text-left hover:border-emerald-500 transition-all custom-shadow group"
+              key={cat.id}
+              onClick={() => setSelectedCat(cat)}
+              className="bg-white p-6 rounded-2xl border border-slate-200 text-left hover:border-blue-500 transition-all hover:shadow-md"
             >
-              <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center text-emerald-600 mb-6 group-hover:bg-emerald-100">
-                <i className={`fas ${q.icon} text-xl`}></i>
-              </div>
-              <h3 className="text-xl font-bold text-slate-800 mb-2">{q.title}</h3>
-              <p className="text-slate-500 text-sm">{q.description}</p>
+              <i className={`fas ${cat.icon} text-blue-600 text-2xl mb-4`}></i>
+              <h3 className="font-bold text-lg mb-1">{cat.title}</h3>
+              <p className="text-slate-500 text-sm">{cat.description}</p>
             </button>
           ))}
         </div>
@@ -104,105 +101,111 @@ const QuizLab: React.FC = () => {
     );
   }
 
-  if (showEnd) {
+  if (isFinished) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <h2 className="text-4xl font-bold text-slate-900 mb-4">Kết quả ôn tập</h2>
-        <p className="text-2xl text-emerald-600 font-bold mb-8">Bạn đúng {score}/{selectedCategory.questions.length} câu!</p>
+      <div className="text-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm animate-in zoom-in duration-300">
+        <div className="text-6xl mb-6">🏆</div>
+        <h2 className="text-3xl font-bold mb-2">Chúc mừng bạn!</h2>
+        <p className="text-slate-500 text-xl mb-8">Bạn đã đúng {score}/{selectedCat.questions.length} câu.</p>
         <button
           onClick={() => {
-            setSelectedCategory(null);
-            setCurrentIndex(0);
+            setSelectedCat(null);
+            setQIdx(0);
             setScore(0);
-            setShowEnd(false);
-            setIsAnswered(false);
-            setSelectedIdx(null);
+            setIsFinished(false);
+            setUserChoice(null);
+            setIsLocked(false);
           }}
-          className="bg-slate-900 text-white px-8 py-3 rounded-xl font-bold"
+          className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold"
         >
-          Quay lại danh mục
+          Làm lại môn khác
         </button>
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto py-8">
-      <div className="flex justify-between items-center mb-10">
-        <button onClick={() => setSelectedCategory(null)} className="text-slate-500 hover:text-slate-800 font-bold">
-          <i className="fas fa-arrow-left mr-2"></i> Trở về
+    <div className="py-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex items-center justify-between mb-6">
+        <button onClick={() => setSelectedCat(null)} className="text-slate-400 font-bold hover:text-slate-800 transition-colors">
+          <i className="fas fa-chevron-left mr-2"></i> Thoát
         </button>
-        <span className="text-sm font-bold text-slate-400">Câu {currentIndex + 1} / {selectedCategory.questions.length}</span>
+        <div className="px-4 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold uppercase tracking-widest">
+          {selectedCat.title}
+        </div>
+        <div className="text-sm font-bold text-slate-400">Câu {qIdx + 1}/{selectedCat.questions.length}</div>
       </div>
 
-      <div className="bg-white p-10 rounded-[40px] border border-slate-100 custom-shadow mb-8">
-        <h3 className="text-2xl font-bold text-slate-800 mb-10 leading-relaxed">{currentQ?.question}</h3>
-        
-        <div className="space-y-4">
+      <div className="bg-white p-6 md:p-10 rounded-3xl border border-slate-100 shadow-sm">
+        <h3 className="text-xl md:text-2xl font-bold text-slate-800 mb-8 leading-relaxed">
+          {currentQ?.question}
+        </h3>
+
+        <div className="space-y-3">
           {currentQ?.options.map((opt, idx) => {
-            let style = "border-slate-100 bg-slate-50 text-slate-700";
-            if (isAnswered) {
-              if (idx === currentQ.correctAnswer) style = "border-emerald-500 bg-emerald-50 text-emerald-700 font-bold";
-              else if (idx === selectedIdx) style = "border-red-500 bg-red-50 text-red-700 font-bold";
-            } else if (idx === selectedIdx) {
-              style = "border-emerald-600 bg-emerald-50 text-emerald-700";
+            let colorClass = "border-slate-100 bg-slate-50 text-slate-700 hover:border-blue-200";
+            if (isLocked) {
+              if (idx === currentQ.correctAnswer) {
+                colorClass = "border-green-500 bg-green-50 text-green-700 font-bold";
+              } else if (idx === userChoice) {
+                colorClass = "border-red-500 bg-red-50 text-red-700";
+              }
+            } else if (idx === userChoice) {
+              colorClass = "border-blue-600 bg-blue-50 text-blue-700 font-bold";
             }
 
             return (
               <button
                 key={idx}
-                onClick={() => handleSelect(idx)}
-                className={`w-full p-5 rounded-2xl border-2 text-left flex items-center transition-all ${style}`}
+                disabled={isLocked}
+                onClick={() => setUserChoice(idx)}
+                className={`w-full p-4 rounded-xl border-2 text-left transition-all ${colorClass}`}
               >
-                <span className="w-8 h-8 rounded-lg bg-white/50 flex items-center justify-center mr-4 text-sm font-bold">
-                  {String.fromCharCode(65 + idx)}
-                </span>
-                {opt}
+                <span className="font-bold mr-3">{String.fromCharCode(65 + idx)}.</span> {opt}
               </button>
             );
           })}
         </div>
 
-        {isAnswered && (
-          <div className="mt-10 pt-10 border-t border-slate-100">
-            <div className="flex justify-between items-center mb-4">
-              <h4 className="font-bold text-slate-800 flex items-center gap-2">
-                <i className="fas fa-lightbulb text-amber-500"></i> Lời giải từ AI
-              </h4>
-              {!explanation && (
+        {isLocked && (
+          <div className="mt-8 pt-8 border-t border-slate-50">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-sm font-bold text-slate-800 uppercase tracking-widest">Góc trợ giúp AI</span>
+              {!aiText && (
                 <button 
-                  onClick={getAIExplanation}
-                  className="text-xs bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-800"
+                  onClick={getHelp} 
+                  disabled={isThinking}
+                  className="text-xs bg-slate-800 text-white px-3 py-2 rounded-lg font-bold hover:bg-slate-700 disabled:opacity-50"
                 >
-                  {loadingAI ? <i className="fas fa-spinner fa-spin mr-2"></i> : <i className="fas fa-robot mr-2"></i>}
-                  Nhờ AI giải thích
+                  {isThinking ? <i className="fas fa-spinner fa-spin mr-2"></i> : <i className="fas fa-robot mr-2"></i>}
+                  Giải thích cho em
                 </button>
               )}
             </div>
-            {explanation && (
-              <p className="text-slate-600 bg-slate-50 p-6 rounded-2xl leading-relaxed text-sm whitespace-pre-wrap">
-                {explanation}
-              </p>
+            {aiText && (
+              <div className="p-4 bg-amber-50 rounded-xl text-slate-700 text-sm leading-relaxed border border-amber-100">
+                {aiText}
+              </div>
             )}
           </div>
         )}
       </div>
 
-      <div className="flex gap-4">
-        {!isAnswered ? (
+      <div className="mt-6">
+        {!isLocked ? (
           <button
             onClick={checkAnswer}
-            disabled={selectedIdx === null}
-            className="flex-1 bg-emerald-600 text-white py-5 rounded-2xl font-bold text-xl disabled:opacity-50 shadow-lg shadow-emerald-600/10"
+            disabled={userChoice === null}
+            className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-blue-100 disabled:opacity-50 transition-all"
           >
             Kiểm tra đáp án
           </button>
         ) : (
           <button
-            onClick={nextQuestion}
-            className="flex-1 bg-slate-900 text-white py-5 rounded-2xl font-bold text-xl shadow-lg shadow-slate-900/10"
+            onClick={handleNext}
+            className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-slate-200 transition-all"
           >
-            Tiếp tục <i className="fas fa-chevron-right ml-2"></i>
+            {qIdx < selectedCat.questions.length - 1 ? 'Câu tiếp theo' : 'Xem kết quả'} <i className="fas fa-arrow-right ml-2"></i>
           </button>
         )}
       </div>
