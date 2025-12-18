@@ -1,40 +1,30 @@
 
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import App from './App.tsx';
 
-/**
- * Điểm khởi đầu của ứng dụng
- */
-const startApp = () => {
-  const container = document.getElementById('root');
-  if (!container) return;
-
-  const root = createRoot(container);
-  
-  try {
-    root.render(
-      <React.StrictMode>
-        <App />
-      </React.StrictMode>
-    );
-  } catch (error) {
-    console.error("Critical Render Error:", error);
-    container.innerHTML = `
-      <div style="padding: 40px; text-align: center; font-family: sans-serif;">
-        <h2 style="color: #ef4444;">Đã xảy ra lỗi khởi động ứng dụng</h2>
-        <p style="color: #64748b;">Vui lòng kiểm tra console hoặc làm mới trang.</p>
-        <button onclick="location.reload()" style="background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">
-          Tải lại trang
+const App = () => {
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-white shadow-2xl rounded-[2rem] p-8 text-center border border-slate-100">
+        <div className="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-200">
+          <i className="fas fa-check text-white text-3xl"></i>
+        </div>
+        <h1 className="text-3xl font-black text-slate-800 mb-2">GitHub OK! 🚀</h1>
+        <p className="text-slate-500 mb-8">Nếu bạn thấy trang này, nghĩa là GitHub Pages đã hoạt động chính xác.</p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition-all"
+        >
+          Làm mới trang
         </button>
+        <p className="mt-6 text-xs text-slate-400 font-medium uppercase tracking-widest">Version 1.0.0 - Stable</p>
       </div>
-    `;
-  }
+    </div>
+  );
 };
 
-// Đảm bảo DOM đã sẵn sàng
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', startApp);
-} else {
-  startApp();
+const container = document.getElementById('root');
+if (container) {
+  const root = createRoot(container);
+  root.render(<App />);
 }
