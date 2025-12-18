@@ -4,27 +4,66 @@ import { createRoot } from 'react-dom/client';
 
 const App = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white shadow-2xl rounded-[2rem] p-8 text-center border border-slate-100">
-        <div className="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-200">
-          <i className="fas fa-check text-white text-3xl"></i>
-        </div>
-        <h1 className="text-3xl font-black text-slate-800 mb-2">GitHub OK! 🚀</h1>
-        <p className="text-slate-500 mb-8">Nếu bạn thấy trang này, nghĩa là GitHub Pages đã hoạt động chính xác.</p>
+    <div style={{ 
+      minHeight: '100vh', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      fontFamily: 'system-ui, -apple-system, sans-serif',
+      padding: '20px'
+    }}>
+      <div style={{ 
+        maxWidth: '450px',
+        width: '100%',
+        backgroundColor: 'white',
+        borderRadius: '30px',
+        padding: '40px',
+        textAlign: 'center',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.1)',
+        border: '1px solid #e2e8f0'
+      }}>
+        <div style={{ fontSize: '60px', marginBottom: '20px' }}>✅</div>
+        <h1 style={{ fontSize: '28px', fontWeight: '900', color: '#0f172a', marginBottom: '10px' }}>
+          GITHUB ĐÃ HIỆN THỊ!
+        </h1>
+        <p style={{ color: '#64748b', fontSize: '16px', lineHeight: '1.6', marginBottom: '30px' }}>
+          Cấu trúc tệp của bạn hiện đã đúng. <br/>
+          Nếu bạn thấy thông báo này, chúng ta đã sẵn sàng để đưa toàn bộ tính năng trắc nghiệm quay trở lại.
+        </p>
         <button 
           onClick={() => window.location.reload()}
-          className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition-all"
+          style={{ 
+            width: '100%',
+            backgroundColor: '#2563eb',
+            color: 'white',
+            border: 'none',
+            padding: '16px',
+            borderRadius: '16px',
+            fontWeight: 'bold',
+            fontSize: '16px',
+            cursor: 'pointer',
+            transition: 'background 0.2s'
+          }}
+          onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
+          onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
         >
-          Làm mới trang
+          Làm mới để kiểm tra lại
         </button>
-        <p className="mt-6 text-xs text-slate-400 font-medium uppercase tracking-widest">Version 1.0.0 - Stable</p>
+        <div style={{ marginTop: '20px', fontSize: '10px', color: '#cbd5e1', letterSpacing: '2px' }}>
+          BUILD STATUS: SUCCESSFUL
+        </div>
       </div>
     </div>
   );
 };
 
+// Khởi tạo an toàn
 const container = document.getElementById('root');
 if (container) {
-  const root = createRoot(container);
-  root.render(<App />);
+  try {
+    const root = createRoot(container);
+    root.render(<App />);
+  } catch (err) {
+    container.innerHTML = `<div style="padding: 20px; color: red;">Lỗi Render: ${err.message}</div>`;
+  }
 }
