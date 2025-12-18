@@ -2,15 +2,24 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 /**
+ * Hàm lấy API Key an toàn
+ */
+const getApiKey = () => {
+  try {
+    return process.env.API_KEY || "";
+  } catch (e) {
+    return "";
+  }
+};
+
+/**
  * Giải thích câu hỏi trắc nghiệm sử dụng Gemini Flash.
- * API Key được lấy từ process.env.API_KEY theo cấu hình hệ thống.
  */
 export const explainQuestion = async (question: string, options: string[], correctAnswer: string) => {
-  // Khởi tạo thực thể AI ngay trong hàm để đảm bảo luôn dùng API Key mới nhất
-  const apiKey = process.env.API_KEY;
+  const apiKey = getApiKey();
   
   if (!apiKey) {
-    return "Lỗi: Hệ thống chưa cấu hình API Key. Vui lòng kiểm tra cài đặt.";
+    return "Lỗi: Hệ thống chưa cấu hình API Key. Vui lòng kiểm tra lại cài đặt môi trường.";
   }
 
   const ai = new GoogleGenAI({ apiKey });
@@ -39,7 +48,10 @@ export const explainQuestion = async (question: string, options: string[], corre
  * Tạo câu trả lời có suy luận sâu sắc sử dụng Gemini 3 Pro Reasoning.
  */
 export const generateThoughtfulResponse = async (prompt: string, history: any[]) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = getApiKey();
+  if (!apiKey) throw new Error("API Key missing");
+  
+  const ai = new GoogleGenAI({ apiKey });
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
@@ -59,7 +71,10 @@ export const generateThoughtfulResponse = async (prompt: string, history: any[])
  * Tạo hình ảnh từ mô tả văn bản sử dụng gemini-2.5-flash-image.
  */
 export const generateImage = async (prompt: string) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = getApiKey();
+  if (!apiKey) throw new Error("API Key missing");
+
+  const ai = new GoogleGenAI({ apiKey });
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
@@ -87,7 +102,10 @@ export const generateImage = async (prompt: string) => {
  * Phân tích văn bản và trích xuất dữ liệu JSON để vẽ biểu đồ.
  */
 export const analyzeData = async (input: string) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = getApiKey();
+  if (!apiKey) throw new Error("API Key missing");
+
+  const ai = new GoogleGenAI({ apiKey });
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -126,7 +144,6 @@ export const analyzeData = async (input: string) => {
   }
 };
 
-// Các hàm bổ trợ cho Live API (Audio)
 export function encode(bytes: Uint8Array) {
   let binary = '';
   const len = bytes.byteLength;
