@@ -1,11 +1,7 @@
 
 export enum AppTab {
-  DASHBOARD = 'dashboard',
-  WRITER = 'writer',
-  IMAGE_GEN = 'image_gen',
-  VOICE = 'voice',
-  DATA_VIZ = 'data_viz',
-  QUIZ_LAB = 'quiz_lab'
+  DASHBOARD = 'trang_chu',
+  QUIZ_LAB = 'on_tap'
 }
 
 export interface Question {
@@ -13,26 +9,12 @@ export interface Question {
   question: string;
   options: string[];
   correctAnswer: number;
-  explanation?: string;
 }
 
 export interface QuizCategory {
   id: string;
   title: string;
+  description: string;
   icon: string;
   questions: Question[];
-}
-
-export interface ChatMessage {
-  role: 'user' | 'model';
-  content: string;
-  timestamp: number;
-  thinking?: string;
-}
-
-export interface GeneratedImage {
-  id: string;
-  url: string;
-  prompt: string;
-  timestamp: number;
 }
